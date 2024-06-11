@@ -24,6 +24,13 @@ And client:
     2024/06/11 16:11:14 Request finished with status 200 and took 100.601µs
     2024/06/11 16:11:14 Average duration: 0.000299
 
+To run the test in UBI9 container with Go 1.19:
+
+    $ podman build -f Containerfile . -t go-http-reproducer
+    $ podman run -ti --rm go-http-reproducer
+
+(this actually fails with `panic: Post "https://localhost:8000": dial tcp [::1]:8000: connect: connection refused` and needs to be resolved)
+
 Because HTTP/2 needs TLS, we generated certificate with (cert is part of the repo):
 
     openssl req -newkey rsa:2048 -nodes -keyout server.key -x509 -days 365 -out server.crt -addext "subjectAltName = DNS:localhost"
