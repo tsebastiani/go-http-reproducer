@@ -9,8 +9,16 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+	"sync"
 
 	"golang.org/x/net/http2"
+)
+
+var (
+	durationTotal     float64
+	durationCounter   int
+	durationTotalMutex sync.Mutex
+	durationCounterMutex sync.Mutex
 )
 
 func doRequest(client *http.Client, method string, serverURL string, payload *bytes.Reader) (float64, error) {
@@ -43,6 +51,35 @@ func doRequest(client *http.Client, method string, serverURL string, payload *by
 	return duration.Seconds(), nil
 }
 
+// Function to perform the request and update counters
+func doRequestWithWaitGroup(tlsConfig *tls.Config, serverURL string, payloadSize int, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	// Create random payload
+	payload := make([]byte, payloadSize)
+	_, err := rand.Read(payload)
+	if err != nil {
+		panic(err)
+	}
+
+	// Configure transport to enable HTTP/2
+	tr := &http2.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{Transport: tr}
+
+	duration, err := doRequest(client, http.MethodPost, serverURL, bytes.NewReader(payload))
+	if err != nil {
+		panic(err)
+	}
+
+	// Update counters within the goroutine
+	durationTotalMutex.Lock()
+	defer durationTotalMutex.Unlock()
+	durationTotal += duration
+	durationCounterMutex.Lock()
+	defer durationCounterMutex.Unlock()
+	durationCounter++
+}
+
 func main() {
 	// Server address
 	serverURL := "https://localhost:8000"
@@ -51,14 +88,7 @@ func main() {
 	payloadSize := 10000
 
 	// Number of requests to do
-	requestsCount := 10
-
-	// Create random payload
-	payload := make([]byte, payloadSize)
-	_, err := rand.Read(payload)
-	if err != nil {
-		panic(err)
-	}
+	requestsCount := 100
 
 	// Create a pool with the server certificate since it is not signed
 	// by a known CA
@@ -74,21 +104,14 @@ func main() {
 		RootCAs: caCertPool,
 	}
 
-	// Configure transport to enable HTTP/2
-	tr := &http2.Transport{TLSClientConfig: tlsConfig}
-	client := &http.Client{Transport: tr}
+	var wg sync.WaitGroup
 
-	durationTotal := 0.0
-	durationCounter := 0
 	for i := 1; i <= requestsCount; i++ {
-		duration, err := doRequest(client, http.MethodPost, serverURL, bytes.NewReader(payload))
-		if err != nil {
-			panic(err)
-		} else {
-			durationTotal += duration
-			durationCounter += 1
-		}
+		wg.Add(1)
+		go doRequestWithWaitGroup(tlsConfig, serverURL, payloadSize, &wg)
 	}
+
+	wg.Wait()
 
 	log.Printf("Average duration: %f", durationTotal / float64(durationCounter))
 }
