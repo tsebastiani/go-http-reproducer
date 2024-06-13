@@ -27,9 +27,7 @@ And client:
 To run the test in UBI9 container with Go 1.19:
 
     $ podman build -f Containerfile . -t go-http-reproducer
-    $ podman run -ti --rm go-http-reproducer
-
-(this actually fails with `panic: Post "https://localhost:8000": dial tcp [::1]:8000: connect: connection refused` and needs to be resolved)
+    $ podman run -ti --rm -v $(pwd)/hosts.cfg:/etc/hosts:Z go-http-reproducer
 
 Because HTTP/2 needs TLS, we generated certificate with (cert is part of the repo):
 
