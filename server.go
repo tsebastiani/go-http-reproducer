@@ -16,7 +16,7 @@ func main() {
 	// Create a server on port 8000
 	// Exactly how you would run an HTTP/1.1 server
 	http2Server := http2.Server{
-		MaxReadFrameSize: 512000,
+		MaxReadFrameSize: 16000,
 	}
 
 	srv := &http.Server{Addr: ":8000", Handler: h2c.NewHandler(http.HandlerFunc(handler), &http2Server)}
@@ -48,7 +48,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		n, err := r.Body.Read(buf)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println(bodyBuffer.Len())
 				return
 			} else {
 				panic(fmt.Errorf("error while reading body %s", err.Error()))
