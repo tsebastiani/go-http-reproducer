@@ -102,7 +102,6 @@ func main() {
 	requestsCount := 15000
 	durationMin = 0.0
 	durationMax = 0.0
-	log.Print(requestsCount)
 	// Create a pool with the server certificate since it is not signed
 	// by a known CA
 	caCert, err := ioutil.ReadFile("server.crt")
@@ -126,7 +125,6 @@ func main() {
 
 	wg.Wait()
 
-	log.Printf("Min 	Max 	Average")
-	log.Printf("%f 		%f 		%f", durationMin, durationMax, durationTotal/float64(durationCounter))
+	log.Printf("%f %f %f", durationMin, durationMax, durationTotal/float64(durationCounter))
 
 }
