@@ -126,7 +126,7 @@ func main() {
 
 	wg.Wait()
 
-	log.Printf("Average duration: %f", durationTotal/float64(durationCounter))
-	log.Printf("Minimum duration: %f", durationMin)
-	log.Printf("Maximum duration: %f", durationMax)
+	log.Printf("Min 	Max 	Average")
+	log.Printf("%f 		%f 		%f", durationMin, durationMax, durationTotal/float64(durationCounter))
+
 }

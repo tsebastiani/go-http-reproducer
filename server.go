@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -41,7 +40,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: minimize garbage, optimize recvBuffer code/ownership
 	const readSize = 8196
-	var bodyBuffer bytes.Buffer
+	//	var bodyBuffer bytes.Buffer
 	for buf := make([]byte, readSize); ; {
 		count++
 		httpReadStart := time.Now()
@@ -60,7 +59,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		if n > 0 {
 			buf = buf[n:]
-			_, err := bodyBuffer.Write(buf)
+			//_, err := bodyBuffer.Write(buf)
 
 			if err != nil {
 				panic(err)

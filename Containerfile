@@ -1,5 +1,6 @@
-FROM registry.access.redhat.com/ubi9/go-toolset:1.19
+#FROM registry.access.redhat.com/ubi9/go-toolset:1.19
 #FROM golang:1.22.4-alpine
+FROM registry-proxy.engineering.redhat.com/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
 WORKDIR /opt/app-root/src
 
 COPY server.go server.crt server.key ./
