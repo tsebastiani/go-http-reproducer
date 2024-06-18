@@ -5,26 +5,57 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"runtime/pprof"
 	"time"
 
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
+
+var cpuProfileFile *os.File
+var memProfileFile *os.File
 
 func main() {
 	// Create a server on port 8000
 	// Exactly how you would run an HTTP/1.1 server
-	http2Server := http2.Server{
-		MaxReadFrameSize: 16000,
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/start-cpu", startCPUProfile)
+	mux.HandleFunc("/stop-cpu", stopCPUProfile)
+	mux.HandleFunc("/", handler)
+
+	srv := &http.Server{
+		Addr:    ":8000",
+		Handler: mux,
 	}
 
-	srv := &http.Server{Addr: ":8000", Handler: h2c.NewHandler(http.HandlerFunc(handler), &http2Server)}
+	http2.ConfigureServer(srv, &http2.Server{MaxReadFrameSize: 16000})
 
 	// Start the server with TLS, since we are running HTTP/2 it must be
 	// run with TLS.
 	// Exactly how you would run an HTTP/1.1 server with TLS connection.
 	log.Printf("Serving on https://0.0.0.0:8000")
 	log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))
+}
+
+func startCPUProfile(w http.ResponseWriter, r *http.Request) {
+	var err error
+	cpuProfileFile, err = os.Create("cpu.prof")
+	if err != nil {
+		http.Error(w, "could not create CPU profile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
+		http.Error(w, "could not start CPU profile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintln(w, "CPU profiling started")
+}
+
+func stopCPUProfile(w http.ResponseWriter, r *http.Request) {
+	pprof.StopCPUProfile()
+	cpuProfileFile.Close()
+	fmt.Fprintln(w, "CPU profiling stopped")
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
